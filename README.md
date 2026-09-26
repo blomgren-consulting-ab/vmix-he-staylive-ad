@@ -98,7 +98,7 @@ run, so you don't need to restart vMix.
 
 | Key | What to put there |
 | --- | --- |
-| `streamId` | Numeric livestream ID. Get it from the Staylive dashboard for the game's livestream. Changes every game. |
+| `streamId` | Numeric livestream ID. Open the game in the Staylive dashboard and copy the ID from the game's URL. Changes every game. |
 | `token` | The JWT/API token you get from Staylive. Ask your Staylive contact for it. |
 | `adUrl` | VAST ad tag URL. The default is the Hockeyettan Google Ad Manager tag. For another league or customer, change at least `iu=` (ad unit) and `description_url=`. Leave `correlator=` empty, because PlayAd fills it in on every request. |
 
