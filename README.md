@@ -1,33 +1,60 @@
 # vMix → Staylive mid-roll ads
 
-Two vMix scripts (VB.NET) that trigger and cancel mid-roll ad breaks on a
-Staylive livestream through the Staylive messages API
+vMix scripts (VB.NET) that trigger mid-roll ad breaks on a Staylive
+livestream through the Staylive messages API
 (see [API MIDROLLS.md](API%20MIDROLLS.md)).
 
+**PlayAd is the only script you need.** CancelAd is optional. Add it only if
+you want a button that stops an ad early or cancels one sent by mistake.
+Without it, every ad plays to the end.
+
 | File | Purpose |
-|-|-|
-| `staylive_play_ad.txt` | vMix script **PlayAd** – sends `PLAY_AD` to every viewer and saves the returned `messageId`. |
-| `staylive_cancel_ad.txt` | vMix script **CancelAd** – cancels the last ad sent on the current stream (`DELETE`). |
+| --- | --- |
+| `staylive_play_ad.txt` | **Required.** vMix script **PlayAd** – sends `PLAY_AD` to every viewer and saves the returned `messageId`. |
+| `staylive_cancel_ad.txt` | *Optional.* vMix script **CancelAd** – cancels the last ad sent on the current stream (`DELETE`). |
 | `staylive.cfg` | Per-game settings (stream ID, token, ad tag URL). The only file you should need to edit on game day. |
 
 ## One-time setup
 
-### 1. Choose a folder for the config
+### 1. Set the folder path in the scripts
 
-Both scripts expect everything in `D:\script\midrolls\`:
+The scripts have the folder `D:\script\midrolls\` written into their code:
 
 | Path | What |
-|-|-|
+| --- | --- |
 | `D:\script\midrolls\staylive.cfg` | Config (you create it from this repo) |
 | `D:\script\midrolls\staylive_log.txt` | Log, written by the scripts |
 | `D:\script\midrolls\staylive_lastad_<streamId>.txt` | Last `messageId` per stream, used by CancelAd |
 
-If you want a different folder, change **all** of these lines to match:
+Copy `staylive.cfg` into the folder you want to use. If it is not
+`D:\script\midrolls\`, replace `D:\script\midrolls\` with your own folder on
+**every** line below. Keep the trailing `\`. The folder must already exist,
+because the scripts don't create it.
 
-- `staylive_play_ad.txt`: `cfgFile`, `logFile` and `stateFile`
-- `staylive_cancel_ad.txt`: `cfgFile`, `logFile` and `stateFile`
+**`staylive_play_ad.txt`**
 
-Copy `staylive.cfg` into that folder.
+| Line | Current code |
+| --- | --- |
+| 3 | `' Reads streamId / token / adUrl from D:\script\midrolls\staylive.cfg` (comment only) |
+| 8 | `Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"` |
+| 9 | `Dim logFile As String = "D:\script\midrolls\staylive_log.txt"` |
+| 42 | `Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"` |
+
+**`staylive_cancel_ad.txt`** (only if you use CancelAd)
+
+| Line | Current code |
+| --- | --- |
+| 3 | `' Reads streamId / token from D:\script\midrolls\staylive.cfg` (comment only) |
+| 9 | `Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"` |
+| 10 | `Dim logFile As String = "D:\script\midrolls\staylive_log.txt"` |
+| 34 | `Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"` |
+
+If you use CancelAd, both scripts must point at the same folder. CancelAd reads the
+`staylive_lastad_…` file that PlayAd writes, so if the paths differ, cancel
+will never find the ad.
+
+Tip: in a text editor, find-and-replace `D:\script\midrolls\` with your
+folder in each script you use.
 
 ### 2. Production delay (PlayAd only)
 
@@ -47,10 +74,11 @@ Dim producerDelayMs As Long = 0
 1. In vMix, open **Settings → Scripting**.
 2. Add a script named exactly `PlayAd` and paste the contents of
    `staylive_play_ad.txt`.
-3. Add a script named exactly `CancelAd` and paste the contents of
-   `staylive_cancel_ad.txt`.
+3. *(Optional)* Add a script named exactly `CancelAd` and paste the
+   contents of `staylive_cancel_ad.txt`.
 4. Bind each script to a shortcut, controller button or trigger with
-   **Function = `ScriptStart`** and **Value = `PlayAd`** / **`CancelAd`**.
+   **Function = `ScriptStart`** and **Value = `PlayAd`** (and **`CancelAd`**
+   if you added it).
 
 If you edit a script file later, paste it into vMix again. vMix does not
 reload it from disk.
@@ -61,7 +89,7 @@ Edit `staylive.cfg` (in the folder from step 1). The scripts read it on every
 run, so you don't need to restart vMix.
 
 | Key | What to put there |
-|-|-|
+| --- | --- |
 | `streamId` | Numeric livestream ID from the Staylive stream URL. Changes every game. |
 | `token` | Staylive JWT from **Dashboard → API keys**. The key needs Owner, Administrator, Producer or Regular user access on the channel (or a collection/platform above it). |
 | `adUrl` | VAST ad tag URL. The default is the Hockeyettan Google Ad Manager tag. For another league or customer, change at least `iu=` (ad unit) and `description_url=`. Leave `correlator=` empty, because PlayAd fills it in on every request. |
@@ -73,7 +101,7 @@ Keep the `key=value` format on one line per key, with no quotes.
 Everything is logged to `staylive_log.txt`:
 
 | Log line | Meaning |
-|-|-|
+| --- | --- |
 | `OK stream=… {"message":{…"sentTo":N,"failed":M…}}` | Ad sent. `sentTo`/`failed` are the delivery counts. |
 | `ABORT - config file missing` / `incomplete config` | Wrong path in the script, or an empty key in the cfg. |
 | `ERR … 401` | Token missing, expired or invalid. |
