@@ -3,6 +3,7 @@
 | | |
 | --- | --- |
 | **Created by** | Mats Blomgren, Blomgren Consulting AB |
+| **Version** | 1.0 |
 | **Created** | 2026-09-17 |
 | **Last updated** | 2026-09-26 |
 
@@ -42,19 +43,19 @@ because the scripts don't create it.
 
 | Line | Current code |
 | --- | --- |
-| 3 | `' Reads streamId / token / adUrl from D:\script\midrolls\staylive.cfg` (comment only) |
-| 8 | `Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"` |
-| 9 | `Dim logFile As String = "D:\script\midrolls\staylive_log.txt"` |
-| 42 | `Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"` |
+| 5 | `' Reads streamId / token / adUrl from D:\script\midrolls\staylive.cfg` (comment only) |
+| 10 | `Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"` |
+| 11 | `Dim logFile As String = "D:\script\midrolls\staylive_log.txt"` |
+| 44 | `Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"` |
 
 **`staylive_cancel_ad.txt`** (only if you use CancelAd)
 
 | Line | Current code |
 | --- | --- |
-| 3 | `' Reads streamId / token from D:\script\midrolls\staylive.cfg` (comment only) |
-| 9 | `Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"` |
-| 10 | `Dim logFile As String = "D:\script\midrolls\staylive_log.txt"` |
-| 34 | `Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"` |
+| 5 | `' Reads streamId / token from D:\script\midrolls\staylive.cfg` (comment only) |
+| 11 | `Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"` |
+| 12 | `Dim logFile As String = "D:\script\midrolls\staylive_log.txt"` |
+| 36 | `Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"` |
 
 If you use CancelAd, both scripts must point at the same folder. CancelAd reads the
 `staylive_lastad_…` file that PlayAd writes, so if the paths differ, cancel
@@ -128,3 +129,13 @@ Everything is logged to `staylive_log.txt`:
 - Viewers whose connection drops at the moment of the trigger miss that ad.
   They don't get it later.
 - CancelAd also removes the ad from Staylive's broadcast history.
+
+## Version history
+
+When you change a script, raise the version and set today's date in the
+script header, in the table at the top of this README and below. Then tag the
+commit in git (for example `git tag v1.1`).
+
+| Version | Date | Changes |
+| --- | --- | --- |
+| 1.0 | 2026-09-26 | First release. PlayAd and CancelAd scripts, config file and README. |

@@ -1,5 +1,7 @@
 ' ============================================================
 ' Staylive ad cancel - vMix script
+' Version 1.0 - last updated 2026-09-26
+' Created 2026-09-17 by Mats Blomgren, Blomgren Consulting AB
 ' Reads streamId / token from D:\script\midrolls\staylive.cfg
 ' Name it "CancelAd", fire with Function = ScriptStart, Value = CancelAd
 ' NOTE: DELETE also removes the broadcast from GET history.
