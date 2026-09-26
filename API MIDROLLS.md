@@ -23,9 +23,9 @@ Use the history to see what has been triggered on a stream, or to
 reconcile state if your own client process restarts. For delivery
 reporting, capture `sentTo` and `failed` from each `POST` response — the
 stored history only records how many viewers were connected at broadcast
-time (`viewer\\\\\\\_count`), not how many the trigger reached.
+time (`viewer_count`), not how many the trigger reached.
 
-\---
+---
 
 ## Base URL
 
@@ -68,7 +68,7 @@ All success responses are wrapped in the standard Staylive API envelope:
 
 ```json
 {
-  "message": { /\\\\\\\* endpoint-specific payload \\\\\\\*/ },
+  "message": { /* endpoint-specific payload */ },
   "statuscode": 201,
   "success": true,
   "data": null
@@ -86,17 +86,17 @@ Errors follow the standard [Boom](https://hapi.dev/module/boom/) shape, e.g.:
 ```
 
 One quirk to be aware of: field names inside `message` use camelCase in the
-`POST` response (`messageId`, `viewerCount`) but snake\_case in the history
-returned by `GET` (`time\\\\\\\_sent`, `viewer\\\\\\\_count`). This is expected — match
+`POST` response (`messageId`, `viewerCount`) but snake_case in the history
+returned by `GET` (`time_sent`, `viewer_count`). This is expected — match
 each endpoint's documented field names exactly rather than assuming one
 convention.
 
-\---
+---
 
 ## POST /livestreams/{id}/messages
 
 Broadcasts a message to every viewer currently watching the livestream. The
-only supported action today is `PLAY\\\\\\\_AD`, which instructs the player to start
+only supported action today is `PLAY_AD`, which instructs the player to start
 a mid-roll ad break.
 
 ### Path parameters
@@ -111,9 +111,9 @@ a mid-roll ad break.
 
 |Field|Type|Required|Description|
 |-|-|-|-|
-|`action`|string|yes|Action to broadcast. Use `"PLAY\\\\\\\_AD"` to trigger a mid-roll ad.|
-|`ad\\\\\\\_url`|string|yes (when `action = "PLAY\\\\\\\_AD"`)|A VAST 3.0/4.x ad tag URL. The viewer's player will fetch this tag and play the returned ad.|
-|`playback\\\\\\\_timestamp`|integer|yes (when `action = "PLAY\\\\\\\_AD"`)|The wall-clock moment, in Unix epoch milliseconds, that the ad should appear from the producer's perspective. See [Choosing the playback timestamp](#choosing-the-playback-timestamp) below.|
+|`action`|string|yes|Action to broadcast. Use `"PLAY_AD"` to trigger a mid-roll ad.|
+|`ad_url`|string|yes (when `action = "PLAY_AD"`)|A VAST 3.0/4.x ad tag URL. The viewer's player will fetch this tag and play the returned ad.|
+|`playback_timestamp`|integer|yes (when `action = "PLAY_AD"`)|The wall-clock moment, in Unix epoch milliseconds, that the ad should appear from the producer's perspective. See [Choosing the playback timestamp](#choosing-the-playback-timestamp) below.|
 
 Additional fields may be included in the payload and will be forwarded to
 viewers untouched, but they are not currently used by the Staylive player.
@@ -121,13 +121,13 @@ viewers untouched, but they are not currently used by the Staylive player.
 ### Example request
 
 ```bash
-curl -X POST "https://api.staylive.tv/livestreams/8451/messages" \\\\\\\\
-  -H "Authorization: Bearer $STAYLIVE\\\\\\\_TOKEN" \\\\\\\\
-  -H "Content-Type: application/json" \\\\\\\\
+curl -X POST "https://api.staylive.tv/livestreams/8451/messages" \
+  -H "Authorization: Bearer $STAYLIVE_TOKEN" \
+  -H "Content-Type: application/json" \
   -d '{
-    "action": "PLAY\\\\\\\_AD",
-    "ad\\\\\\\_url": "https://ads.example.com/vast?tag=midroll-promo-1",
-    "playback\\\\\\\_timestamp": 1748177500000
+    "action": "PLAY_AD",
+    "ad_url": "https://ads.example.com/vast?tag=midroll-promo-1",
+    "playback_timestamp": 1748177500000
   }'
 ```
 
@@ -163,14 +163,14 @@ your player needs them.
 
 |Status|When|
 |-|-|
-|`400 Bad Request`|Payload fails validation (missing `action`, `ad\\\\\\\_url` or `playback\\\\\\\_timestamp` for `PLAY\\\\\\\_AD`, or non-integer/non-positive `playback\\\\\\\_timestamp`).|
+|`400 Bad Request`|Payload fails validation (missing `action`, `ad_url` or `playback_timestamp` for `PLAY_AD`, or non-integer/non-positive `playback_timestamp`).|
 |`401 Unauthorized`|Missing, expired, or invalid token.|
 |`403 Forbidden`|Token is valid but the user does not hold an accepted role on the livestream — also returned when the livestream ID does not exist.|
 |`502 Bad Gateway`|Staylive's messaging service is unreachable or the broadcast failed. This usually means no viewer received the trigger, but it is not a guarantee — see [Retrying safely](#operational-notes) before re-posting.|
 
 ### Choosing the playback timestamp
 
-`playback\\\\\\\_timestamp` is the moment, on the producer's clock, when the ad
+`playback_timestamp` is the moment, on the producer's clock, when the ad
 should appear to play. Because every viewer experiences a different delay
 between the source feed and their own playback head, the Staylive player
 uses this timestamp together with the live stream's Program-Date-Time (PDT)
@@ -189,10 +189,10 @@ milliseconds) so that all viewers see the ad break aligned to the same
 moment of broadcast content the producer was looking at when they
 triggered it.
 
-If `playback\\\\\\\_timestamp` is far in the past (more than a few seconds), most
+If `playback_timestamp` is far in the past (more than a few seconds), most
 viewers will play the ad immediately on receipt rather than catching up.
 
-\---
+---
 
 ## GET /livestreams/{id}/messages
 
@@ -206,13 +206,13 @@ Useful for:
 
 Two limitations to be aware of:
 
-* `viewer\\\\\\\_count` is the number of viewers connected at broadcast time, not
+* `viewer_count` is the number of viewers connected at broadcast time, not
 the number the trigger was delivered to. Delivery counts (`sentTo`,
 `failed`) are only returned in the `POST` response and are not stored, so
 capture them there if you need delivery reporting.
 * There is no status field, and the API does not know when an ad finishes —
 ad length is determined by the VAST creative in each viewer's player. The
-history tells you what was triggered and when (`time\\\\\\\_sent`), not whether
+history tells you what was triggered and when (`time_sent`), not whether
 an ad is still playing.
 
 ### Path parameters
@@ -227,14 +227,14 @@ an ad is still playing.
 {
   "message": {
     "count": 1,
-    "messages": \\\\\\\[
+    "messages": [
       {
         "id": "7f9c1b2e-4d3a-4f6b-9e8d-2a1c5b7d9e0f",
-        "action": "PLAY\\\\\\\_AD",
-        "ad\\\\\\\_url": "https://ads.example.com/vast?tag=midroll-promo-1",
-        "playback\\\\\\\_timestamp": 1748177500000,
-        "time\\\\\\\_sent": 1748177500142,
-        "viewer\\\\\\\_count": 1843
+        "action": "PLAY_AD",
+        "ad_url": "https://ads.example.com/vast?tag=midroll-promo-1",
+        "playback_timestamp": 1748177500000,
+        "time_sent": 1748177500142,
+        "viewer_count": 1843
       }
     ]
   },
@@ -247,10 +247,10 @@ an ad is still playing.
 |Field|Description|
 |-|-|
 |`count`|Number of messages in the response.|
-|`messages`|Array of broadcast messages, sorted ascending by `time\\\\\\\_sent`.|
-|`messages\\\\\\\[].id`|Stable identifier for the broadcast, matching the `messageId` returned by `POST`.|
-|`messages\\\\\\\[].time\\\\\\\_sent`|Server timestamp (Unix ms) when the broadcast was emitted.|
-|`messages\\\\\\\[].viewer\\\\\\\_count`|Number of viewers connected at broadcast time.|
+|`messages`|Array of broadcast messages, sorted ascending by `time_sent`.|
+|`messages[].id`|Stable identifier for the broadcast, matching the `messageId` returned by `POST`.|
+|`messages[].time_sent`|Server timestamp (Unix ms) when the broadcast was emitted.|
+|`messages[].viewer_count`|Number of viewers connected at broadcast time.|
 
 ### Error responses
 
@@ -264,7 +264,7 @@ An unknown livestream ID is not an error either — it returns `200 OK` with
 an empty `messages` array, so a mistyped ID looks identical to a livestream
 that has had no broadcasts.
 
-\---
+---
 
 ## DELETE /livestreams/{id}/messages/{messageId}
 
@@ -302,8 +302,8 @@ elevated roles listed under [Authentication](#authentication).
 ### Example request
 
 ```bash
-curl -X DELETE "https://api.staylive.tv/livestreams/8451/messages/7f9c1b2e-4d3a-4f6b-9e8d-2a1c5b7d9e0f" \\\\\\\\
-  -H "Authorization: Bearer $STAYLIVE\\\\\\\_TOKEN"
+curl -X DELETE "https://api.staylive.tv/livestreams/8451/messages/7f9c1b2e-4d3a-4f6b-9e8d-2a1c5b7d9e0f" \
+  -H "Authorization: Bearer $STAYLIVE_TOKEN"
 ```
 
 ### Example response — `200 OK`
@@ -326,7 +326,7 @@ curl -X DELETE "https://api.staylive.tv/livestreams/8451/messages/7f9c1b2e-4d3a-
 |`404 Not Found`|No message with the given `messageId` exists for this livestream.|
 |`502 Bad Gateway`|Messaging service temporarily unreachable. Safe to retry.|
 
-\---
+---
 
 ## Operational notes
 
@@ -346,8 +346,8 @@ Use `DELETE` to cancel, then `POST` a fresh trigger if you need to retry.
 not broadcast, but it is not a guarantee — the failure can occur after
 delivery (for example, the connection drops after viewers were reached).
 Blindly re-posting therefore risks a double ad break. To retry safely,
-include a unique field of your own in every `PLAY\\\\\\\_AD` payload (e.g.
-`"client\\\\\\\_reference": "<uuid>"` — extra fields are stored with the
+include a unique field of your own in every `PLAY_AD` payload (e.g.
+`"client_reference": "<uuid>"` — extra fields are stored with the
 message), and on a `502` call `GET /livestreams/{id}/messages` first: if
 a message with your reference is already in the history, the broadcast
 went out and you should not re-post.

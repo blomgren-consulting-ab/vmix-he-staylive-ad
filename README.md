@@ -13,6 +13,7 @@ Without it, every ad plays to the end.
 | `staylive_play_ad.txt` | **Required.** vMix script **PlayAd** – sends `PLAY_AD` to every viewer and saves the returned `messageId`. |
 | `staylive_cancel_ad.txt` | *Optional.* vMix script **CancelAd** – cancels the last ad sent on the current stream (`DELETE`). |
 | `staylive.cfg` | Per-game settings (stream ID, token, ad tag URL). The only file you should need to edit on game day. |
+| `API MIDROLLS.md` | *For reference only.* Staylive's API documentation. You don't need it to use the scripts. |
 
 ## One-time setup
 
