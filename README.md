@@ -1,5 +1,11 @@
 # vMix → Staylive mid-roll ads
 
+| | |
+| --- | --- |
+| **Created by** | Mats Blomgren, Blomgren Consulting AB |
+| **Created** | 2026-09-17 |
+| **Last updated** | 2026-09-26 |
+
 vMix scripts (VB.NET) that trigger mid-roll ad breaks on a Staylive
 livestream through the Staylive messages API
 (see [API MIDROLLS.md](API%20MIDROLLS.md)).
