@@ -1,0 +1,59 @@
+' ============================================================
+' Staylive ad cancel - vMix script
+' Reads streamId / token from D:\script\midrolls\staylive.cfg
+' Name it "CancelAd", fire with Function = ScriptStart, Value = CancelAd
+' NOTE: DELETE also removes the broadcast from GET history.
+' ============================================================
+
+Dim baseUrl As String = "https://api.staylive.tv"
+Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"
+Dim logFile As String = "D:\script\midrolls\staylive_log.txt"
+
+Dim nl As String = System.Environment.NewLine
+
+Dim streamId As String = ""
+Dim token As String = ""
+
+If System.IO.File.Exists(cfgFile) = False Then
+  System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " CANCEL ABORT - config file missing" & nl)
+  Return
+End If
+
+Dim cfgLines() As String = System.IO.File.ReadAllLines(cfgFile)
+For Each ln As String In cfgLines
+  Dim t As String = ln.Trim()
+  If t.StartsWith("streamId=") Then streamId = t.Substring(9).Trim()
+  If t.StartsWith("token=") Then token = t.Substring(6).Trim()
+Next
+
+If streamId = "" Or token = "" Then
+  System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " CANCEL ABORT - incomplete config" & nl)
+  Return
+End If
+
+Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"
+
+System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
+
+If System.IO.File.Exists(stateFile) = False Then
+  System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " CANCEL skipped - no messageId for stream " & streamId & nl)
+Else
+  Dim messageId As String = System.IO.File.ReadAllText(stateFile).Trim()
+  Dim url As String = baseUrl & "/livestreams/" & streamId & "/messages/" & messageId
+
+  Dim wc As New System.Net.WebClient
+  wc.Encoding = System.Text.Encoding.UTF8
+  wc.Headers.Add("Authorization", "Bearer " & token)
+
+  Try
+    Dim respText As String = wc.UploadString(url, "DELETE", "")
+    System.IO.File.Delete(stateFile)
+    System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " CANCEL OK " & respText & nl)
+  Catch ex As Exception
+    ' 404 = already gone (ad finished or previously cancelled)
+    If ex.Message.Contains("404") Then
+      System.IO.File.Delete(stateFile)
+    End If
+    System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " CANCEL ERR " & ex.Message & nl)
+  End Try
+End If

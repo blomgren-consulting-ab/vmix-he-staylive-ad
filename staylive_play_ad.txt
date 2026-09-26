@@ -1,0 +1,110 @@
+' ============================================================
+' Staylive mid-roll ad trigger - vMix script
+' Reads streamId / token / adUrl from D:\script\midrolls\staylive.cfg
+' Name it "PlayAd", fire with Function = ScriptStart, Value = PlayAd
+' ============================================================
+
+Dim baseUrl As String = "https://api.staylive.tv"
+Dim cfgFile As String = "D:\script\midrolls\staylive.cfg"
+Dim logFile As String = "D:\script\midrolls\staylive_log.txt"
+
+' Off-site production: your end-to-end delay in ms. On-site: leave at 0.
+Dim producerDelayMs As Long = 0
+
+Dim q As String = System.Convert.ToChar(34).ToString()
+Dim nl As String = System.Environment.NewLine
+
+' ---- read config -------------------------------------------
+Dim streamId As String = ""
+Dim token As String = ""
+Dim adUrl As String = ""
+
+If System.IO.File.Exists(cfgFile) = False Then
+  System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " ABORT - config file missing: " & cfgFile & nl)
+  Return
+End If
+
+Dim cfgLines() As String = System.IO.File.ReadAllLines(cfgFile)
+For Each ln As String In cfgLines
+  Dim t As String = ln.Trim()
+  If t.StartsWith("streamId=") Then streamId = t.Substring(9).Trim()
+  If t.StartsWith("token=") Then token = t.Substring(6).Trim()
+  If t.StartsWith("adUrl=") Then adUrl = t.Substring(6).Trim()
+Next
+
+If streamId = "" Or token = "" Or adUrl = "" Then
+  System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " ABORT - incomplete config (streamId/token/adUrl)" & nl)
+  Return
+End If
+' ------------------------------------------------------------
+
+' state file is per stream, so a stale ID from an earlier game is never reused
+Dim stateFile As String = "D:\script\midrolls\staylive_lastad_" & streamId & ".txt"
+
+System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
+
+Dim epoch As DateTime = New DateTime(1970, 1, 1)
+Dim nowMs As Long = System.Convert.ToInt64((DateTime.UtcNow - epoch).TotalMilliseconds) - producerDelayMs
+Dim clientRef As String = System.Guid.NewGuid().ToString()
+Dim url As String = baseUrl & "/livestreams/" & streamId & "/messages"
+
+' Google Ad Manager needs a unique correlator per ad request.
+' An empty correlator= can make repeat breaks look like the same request.
+If adUrl.EndsWith("correlator=") Then
+  adUrl = adUrl & nowMs.ToString()
+Else
+  adUrl = adUrl.Replace("correlator=&", "correlator=" & nowMs.ToString() & "&")
+End If
+
+Dim body As String = "{"
+body = body & q & "action" & q & ":" & q & "PLAY_AD" & q & ","
+body = body & q & "ad_url" & q & ":" & q & adUrl & q & ","
+body = body & q & "playback_timestamp" & q & ":" & nowMs.ToString() & ","
+body = body & q & "client_reference" & q & ":" & q & clientRef & q
+body = body & "}"
+
+Dim wc As New System.Net.WebClient
+wc.Encoding = System.Text.Encoding.UTF8
+wc.Headers.Add("Authorization", "Bearer " & token)
+wc.Headers.Add("Content-Type", "application/json")
+
+Dim respText As String = ""
+Dim ok As Boolean = False
+
+Try
+  respText = wc.UploadString(url, "POST", body)
+  ok = True
+Catch ex As Exception
+  respText = ex.Message
+  System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " ERR stream=" & streamId & " " & respText & nl)
+  ' 403 here usually means a wrong streamId, not a bad token
+  If respText.Contains("403") Then
+    System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " check streamId in " & cfgFile & nl)
+  End If
+  ' A 502 may still have gone out - check history before firing again
+  If respText.Contains("502") Then
+    Try
+      Dim wc2 As New System.Net.WebClient
+      Dim hist As String = wc2.DownloadString(url)
+      If hist.Contains(clientRef) Then
+        System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " 502 but ad WAS delivered - do NOT re-fire" & nl)
+      Else
+        System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " 502 and no record - safe to fire again" & nl)
+      End If
+    Catch ex2 As Exception
+    End Try
+  End If
+End Try
+
+If ok Then
+  Dim p As Integer = respText.IndexOf(q & "messageId" & q)
+  If p >= 0 Then
+    Dim s1 As Integer = respText.IndexOf(q, p + 11)
+    Dim s2 As Integer = respText.IndexOf(q, s1 + 1)
+    If s1 >= 0 And s2 > s1 Then
+      System.IO.File.WriteAllText(stateFile, respText.Substring(s1 + 1, s2 - s1 - 1))
+    End If
+  End If
+  ' sentTo / failed only exist here - log the whole body for reporting
+  System.IO.File.AppendAllText(logFile, DateTime.Now.ToString("s") & " OK stream=" & streamId & " " & respText & nl)
+End If
