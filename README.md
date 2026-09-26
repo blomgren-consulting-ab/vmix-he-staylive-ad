@@ -139,3 +139,7 @@ commit in git (for example `git tag v1.1`).
 | Version | Date | Changes |
 | --- | --- | --- |
 | 1.0 | 2026-09-26 | First release. PlayAd and CancelAd scripts, config file and README. |
+
+## License
+
+MIT. See [LICENSE](LICENSE). Note: `API MIDROLLS.md` is Staylive's documentation and is not covered by this license.
